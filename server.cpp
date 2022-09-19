@@ -47,6 +47,14 @@ void RunServerLoop(ENetHost *server) {
                     set.insert(event.peer);
                 }
 
+                if (recvDataDecode.size() == 2 && recvDataDecode.at(0) == "UNSUBSCRIBE") {
+                    auto &set = topicsWithSubscribedPeers[recvDataDecode[1]];
+                    auto it = set.find(event.peer);
+                    if (it != set.end()) {
+                        set.erase(event.peer);
+                    }
+                }
+
                 if (recvDataDecode.size() == 3 && recvDataDecode.at(0) == "PUBLISH") {
                     if (topicsWithSubscribedPeers.contains(recvDataDecode[1])) {
                         for (auto peer: topicsWithSubscribedPeers.at(recvDataDecode[1])) {

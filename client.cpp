@@ -12,11 +12,11 @@ using namespace std::chrono_literals;
 int main(int argc, char **argv) {
 
     std::string publisherOrSubsriberStr;
-    while(!(publisherOrSubsriberStr == "P" || publisherOrSubsriberStr == "S"))
-    {
+    while (!(publisherOrSubsriberStr == "P" || publisherOrSubsriberStr == "S")) {
         std::cout << "Are you a publisher (P) or subscriber (S)? ";
         std::getline(std::cin, publisherOrSubsriberStr);
-        std::transform(publisherOrSubsriberStr.begin(), publisherOrSubsriberStr.end(), publisherOrSubsriberStr.begin(), ::toupper);
+        std::transform(publisherOrSubsriberStr.begin(), publisherOrSubsriberStr.end(), publisherOrSubsriberStr.begin(),
+                       ::toupper);
     }
 
     bool isSubscriber = false;
@@ -77,23 +77,51 @@ int main(int argc, char **argv) {
     if (isSubscriber) {
         auto userInput = std::thread{[&]() {
             while (true) {
-                std::cout << "Enter what you want to subscribe to: ";
-                std::string subTo;
-                getline(std::cin, subTo);
-                if(subTo.empty())
-                {
-                    continue;
+
+                std::string subOrUnsub;
+                while (!(subOrUnsub == "S" || subOrUnsub == "U")) {
+                    std::cout << "Do you want to subscribe (S) or unsubscribe (U)? ";
+                    std::getline(std::cin, subOrUnsub);
+                    std::transform(subOrUnsub.begin(), subOrUnsub.end(), subOrUnsub.begin(), ::toupper);
                 }
-                std::transform(subTo.begin(), subTo.end(), subTo.begin(), ::toupper);
 
-                std::lock_guard<std::mutex> lockGuard{NetMtx};
+                if (subOrUnsub == "S") {
+                    std::cout << "Enter what you want to subscribe to: ";
+                    std::string subTo;
+                    getline(std::cin, subTo);
+                    if (subTo.empty()) {
+                        continue;
+                    }
+                    std::transform(subTo.begin(), subTo.end(), subTo.begin(), ::toupper);
 
-                std::string packetStr = "SUBSCRIBE " + subTo;
-                ENetPacket *packet = enet_packet_create(packetStr.c_str(),
-                                                        strlen(packetStr.c_str()) + 1,
-                                                        ENET_PACKET_FLAG_RELIABLE);
+                    std::lock_guard<std::mutex> lockGuard{NetMtx};
 
-                enet_peer_send(peer, 0, packet);
+                    std::string packetStr = "SUBSCRIBE " + subTo;
+                    ENetPacket *packet = enet_packet_create(packetStr.c_str(),
+                                                            strlen(packetStr.c_str()) + 1,
+                                                            ENET_PACKET_FLAG_RELIABLE);
+
+                    enet_peer_send(peer, 0, packet);
+                } else {
+                    std::cout << "Enter what you want to unsubscribe to: ";
+                    std::string unsubTo;
+                    getline(std::cin, unsubTo);
+                    if (unsubTo.empty()) {
+                        continue;
+                    }
+                    std::transform(unsubTo.begin(), unsubTo.end(), unsubTo.begin(), ::toupper);
+
+                    std::lock_guard<std::mutex> lockGuard{NetMtx};
+
+                    std::string packetStr = "UNSUBSCRIBE " + unsubTo;
+                    ENetPacket *packet = enet_packet_create(packetStr.c_str(),
+                                                            strlen(packetStr.c_str()) + 1,
+                                                            ENET_PACKET_FLAG_RELIABLE);
+
+                    enet_peer_send(peer, 0, packet);
+                }
+
+
             }
         }};
 
@@ -114,8 +142,8 @@ int main(int argc, char **argv) {
                     const auto recvDataDecode = split((char *) event.packet->data, ' ');
 
                     if (recvDataDecode.size() == 3 && recvDataDecode.at(0) == "NEWS") {
-                        const auto& category = recvDataDecode[1];
-                        const auto& message = recvDataDecode[2];
+                        const auto &category = recvDataDecode[1];
+                        const auto &message = recvDataDecode[2];
                         std::cout << "News incoming in category " << category << ": " << message << std::endl;
                     }
                 }
