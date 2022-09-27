@@ -2,6 +2,7 @@
 
 #include <enet/enet.h>
 
+#include <string.h>
 #include <iostream>
 #include <string>
 #include <set>
@@ -29,7 +30,7 @@ void RunServerLoop(ENetHost *server) {
                 SS << "User_" << peerId++;
                 S = SS.str();
                 d = static_cast<char *>(malloc(S.size() + 1));
-                strcpy_s(d, S.size() + 1, S.c_str());
+                strcpy(d, S.c_str());
                 event.peer->data = d;
                 break;
 
